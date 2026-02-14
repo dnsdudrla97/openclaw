@@ -153,7 +153,12 @@ export async function fetchWithGuard(params: {
     timeoutMs: params.timeoutMs,
     policy: params.policy,
     auditContext: params.auditContext,
-    init: { headers: { "User-Agent": "OpenClaw-Gateway/1.0" } },
+    init: {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+      },
+    },
   });
 
   try {

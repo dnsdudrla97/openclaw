@@ -193,6 +193,22 @@ describe("OpenAI-compatible HTTP API (e2e)", () => {
 
       {
         mockAgentOnce([{ text: "hello" }]);
+        const res = await postChatCompletions(
+          port,
+          { model: "openclaw", messages: [{ role: "user", content: "hi" }] },
+          { origin: "https://control.example.com/dashboard?tab=chat" },
+        );
+        expect(res.status).toBe(200);
+
+        const [opts] = agentCommand.mock.calls[0] ?? [];
+        expect((opts as { requestOrigin?: string } | undefined)?.requestOrigin).toBe(
+          "https://control.example.com",
+        );
+        await res.text();
+      }
+
+      {
+        mockAgentOnce([{ text: "hello" }]);
         const res = await postChatCompletions(port, {
           user: "alice",
           model: "openclaw",

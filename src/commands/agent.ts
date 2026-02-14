@@ -450,6 +450,7 @@ export async function agentCommand(
             abortSignal: opts.abortSignal,
             extraSystemPrompt: opts.extraSystemPrompt,
             inputProvenance: opts.inputProvenance,
+            requestOrigin: opts.requestOrigin,
             streamParams: opts.streamParams,
             agentDir,
             onAgentEvent: (evt) => {

@@ -101,6 +101,7 @@ export type GatewayRequestOptions = {
   req: RequestFrame;
   client: GatewayClient | null;
   isWebchatConnect: (params: ConnectParams | null | undefined) => boolean;
+  requestOrigin?: string;
   respond: RespondFn;
   context: GatewayRequestContext;
 };
@@ -110,6 +111,7 @@ export type GatewayRequestHandlerOptions = {
   params: Record<string, unknown>;
   client: GatewayClient | null;
   isWebchatConnect: (params: ConnectParams | null | undefined) => boolean;
+  requestOrigin?: string;
   respond: RespondFn;
   context: GatewayRequestContext;
 };

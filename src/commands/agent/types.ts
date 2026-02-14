@@ -74,6 +74,8 @@ export type AgentCommandOpts = {
   runId?: string;
   extraSystemPrompt?: string;
   inputProvenance?: InputProvenance;
+  /** Request origin propagated from gateway clients (for provider header attribution). */
+  requestOrigin?: string;
   /** Per-call stream param overrides (best-effort). */
   streamParams?: AgentStreamParams;
 };

@@ -89,6 +89,7 @@ export type EmbeddedRunAttemptParams = {
   disableMessageTool?: boolean;
   extraSystemPrompt?: string;
   inputProvenance?: InputProvenance;
+  requestOrigin?: string;
   streamParams?: AgentStreamParams;
   ownerNumbers?: string[];
   enforceFinalTag?: boolean;

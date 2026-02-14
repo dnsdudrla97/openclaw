@@ -273,4 +273,44 @@ describe("gateway agent handler", () => {
     expect(capturedStore?.["agent:main:work"]).toBeDefined();
     expect(capturedStore?.["agent:main:MAIN"]).toBeUndefined();
   });
+
+  it("forwards requestOrigin to agentCommand", async () => {
+    mocks.agentCommand.mockReset();
+    mocks.loadSessionEntry.mockReturnValue({
+      cfg: {},
+      storePath: "/tmp/sessions.json",
+      entry: {
+        sessionId: "existing-session-id",
+        updatedAt: Date.now(),
+      },
+      canonicalKey: "agent:main:main",
+    });
+    mocks.updateSessionStore.mockResolvedValue(undefined);
+    mocks.agentCommand.mockResolvedValue({
+      payloads: [{ text: "ok" }],
+      meta: { durationMs: 100 },
+    });
+
+    const respond = vi.fn();
+    await agentHandlers.agent({
+      params: {
+        message: "test",
+        agentId: "main",
+        sessionKey: "agent:main:main",
+        idempotencyKey: "test-origin-forward",
+      },
+      requestOrigin: "https://control.example.com",
+      respond,
+      context: makeContext(),
+      req: { type: "req", id: "origin-1", method: "agent" },
+      client: null,
+      isWebchatConnect: () => false,
+    });
+
+    await vi.waitFor(() => expect(mocks.agentCommand).toHaveBeenCalled());
+    const [opts] = mocks.agentCommand.mock.calls[0] ?? [];
+    expect((opts as { requestOrigin?: string } | undefined)?.requestOrigin).toBe(
+      "https://control.example.com",
+    );
+  });
 });

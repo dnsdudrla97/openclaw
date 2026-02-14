@@ -45,7 +45,12 @@ import {
   setSseHeaders,
   writeDone,
 } from "./http-common.js";
-import { getBearerToken, resolveAgentIdForRequest, resolveSessionKey } from "./http-utils.js";
+import {
+  getBearerToken,
+  resolveAgentIdForRequest,
+  resolveRequestOrigin,
+  resolveSessionKey,
+} from "./http-utils.js";
 import {
   CreateResponseBodySchema,
   type ContentPart,
@@ -400,6 +405,7 @@ export async function handleOpenResponsesHttpRequest(
   const stream = Boolean(payload.stream);
   const model = payload.model;
   const user = payload.user;
+  const requestOrigin = resolveRequestOrigin(req);
 
   // Extract images + files from input (Phase 2)
   let images: ImageContent[] = [];
@@ -561,6 +567,7 @@ export async function handleOpenResponsesHttpRequest(
           deliver: false,
           messageChannel: "webchat",
           bestEffortDeliver: false,
+          requestOrigin,
         },
         defaultRuntime,
         deps,
@@ -801,6 +808,7 @@ export async function handleOpenResponsesHttpRequest(
           deliver: false,
           messageChannel: "webchat",
           bestEffortDeliver: false,
+          requestOrigin,
         },
         defaultRuntime,
         deps,

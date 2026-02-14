@@ -191,6 +191,19 @@ describe("OpenResponses HTTP API (e2e)", () => {
       await ensureResponseConsumed(resUser);
 
       mockAgentOnce([{ text: "hello" }]);
+      const resOrigin = await postResponses(
+        port,
+        { model: "openclaw", input: "hi" },
+        { origin: "https://control.example.com/chat?mode=web" },
+      );
+      expect(resOrigin.status).toBe(200);
+      const [optsOrigin] = agentCommand.mock.calls[0] ?? [];
+      expect((optsOrigin as { requestOrigin?: string } | undefined)?.requestOrigin).toBe(
+        "https://control.example.com",
+      );
+      await ensureResponseConsumed(resOrigin);
+
+      mockAgentOnce([{ text: "hello" }]);
       const resString = await postResponses(port, {
         model: "openclaw",
         input: "hello world",

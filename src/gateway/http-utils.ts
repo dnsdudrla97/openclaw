@@ -77,3 +77,31 @@ export function resolveSessionKey(params: {
   const mainKey = user ? `${params.prefix}-user:${user}` : `${params.prefix}:${randomUUID()}`;
   return buildAgentMainSessionKey({ agentId: params.agentId, mainKey });
 }
+
+export function resolveRequestOrigin(req: IncomingMessage): string | undefined {
+  const originRaw = getHeader(req, "origin")?.trim();
+  if (originRaw) {
+    try {
+      const parsed = new URL(originRaw);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.origin;
+      }
+    } catch {
+      // fall through to Referer
+    }
+  }
+
+  const refererRaw = getHeader(req, "referer")?.trim();
+  if (!refererRaw) {
+    return undefined;
+  }
+  try {
+    const parsed = new URL(refererRaw);
+    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+      return parsed.origin;
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+}

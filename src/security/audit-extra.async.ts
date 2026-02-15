@@ -958,7 +958,8 @@ export async function readConfigSnapshotForAudit(params: {
   configPath: string;
 }): Promise<ConfigFileSnapshot> {
   return await createConfigIO({
-    env: params.env,
+    // Clone env to avoid hydrating dotenv (and mutating process.env) during audits/tests.
+    env: { ...params.env },
     configPath: params.configPath,
   }).readConfigFileSnapshot();
 }

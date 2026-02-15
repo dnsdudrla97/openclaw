@@ -7,8 +7,10 @@ import { log } from "./logger.js";
 const OPENROUTER_APP_HEADERS: Record<string, string> = {
   "HTTP-Referer": "https://openclaw.ai",
 };
-const OPENAI_RESPONSES_APIS = new Set(["openai-responses", "openai-codex-responses"]);
-const OPENAI_RESPONSES_PROVIDERS = new Set(["openai", "openai-codex"]);
+// NOTE: We only force `store=true` for *direct* OpenAI Responses.
+// Codex responses (chatgpt.com/backend-api/codex/responses) require `store=false`.
+const OPENAI_RESPONSES_APIS = new Set(["openai-responses"]);
+const OPENAI_RESPONSES_PROVIDERS = new Set(["openai"]);
 
 function resolveOpenRouterReferer(requestOrigin?: string): string {
   const raw = requestOrigin?.trim();
@@ -229,7 +231,7 @@ export function applyExtraParamsToAgent(
   }
 
   // Work around upstream pi-ai hardcoding `store: false` for Responses API.
-  // Force `store=true` for direct OpenAI/OpenAI Codex providers so multi-turn
-  // server-side conversation state is preserved.
+  // Force `store=true` for direct OpenAI Responses so multi-turn server-side
+  // conversation state is preserved (Codex requires `store=false`).
   agent.streamFn = createOpenAIResponsesStoreWrapper(agent.streamFn);
 }

@@ -323,7 +323,6 @@ describe("gateway agent handler", () => {
       "https://control.example.com",
     );
   });
-
   it("handles bare /new by resetting the same session and sending reset greeting prompt", async () => {
     mocks.sessionsResetHandler.mockImplementation(
       async (opts: {

@@ -218,8 +218,7 @@ async function installSignalCliFromRelease(runtime: RuntimeEnv): Promise<SignalI
   const apiUrl = "https://api.github.com/repos/AsamK/signal-cli/releases/latest";
   const response = await fetch(apiUrl, {
     headers: {
-      "User-Agent":
-        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/144.0.0.0 Safari/537.36",
+      "User-Agent": "openclaw",
       Accept: "application/vnd.github+json",
     },
   });

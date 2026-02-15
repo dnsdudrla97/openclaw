@@ -976,7 +976,6 @@ export function attachGatewayWsMessageHandler(params: {
           respond,
           client,
           isWebchatConnect,
-          requestOrigin,
           extraHandlers,
           context: buildRequestContext(),
         });

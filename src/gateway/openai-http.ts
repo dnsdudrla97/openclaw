@@ -19,12 +19,7 @@ import {
   setSseHeaders,
   writeDone,
 } from "./http-common.js";
-import {
-  getBearerToken,
-  resolveAgentIdForRequest,
-  resolveRequestOrigin,
-  resolveSessionKey,
-} from "./http-utils.js";
+import { getBearerToken, resolveAgentIdForRequest, resolveSessionKey } from "./http-utils.js";
 
 type OpenAiHttpOptions = {
   auth: ResolvedGatewayAuth;
@@ -188,7 +183,6 @@ export async function handleOpenAiHttpRequest(
   const stream = Boolean(payload.stream);
   const model = typeof payload.model === "string" ? payload.model : "openclaw";
   const user = typeof payload.user === "string" ? payload.user : undefined;
-  const requestOrigin = resolveRequestOrigin(req);
 
   const agentId = resolveAgentIdForRequest({ req, model });
   const sessionKey = resolveOpenAiSessionKey({ req, agentId, user });
@@ -217,7 +211,6 @@ export async function handleOpenAiHttpRequest(
           deliver: false,
           messageChannel: "webchat",
           bestEffortDeliver: false,
-          requestOrigin,
         },
         defaultRuntime,
         deps,
@@ -332,7 +325,6 @@ export async function handleOpenAiHttpRequest(
           deliver: false,
           messageChannel: "webchat",
           bestEffortDeliver: false,
-          requestOrigin,
         },
         defaultRuntime,
         deps,

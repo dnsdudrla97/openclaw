@@ -49,7 +49,7 @@ import { waitForAgentJob } from "./agent-job.js";
 import { injectTimestamp, timestampOptsFromConfig } from "./agent-timestamp.js";
 
 export const agentHandlers: GatewayRequestHandlers = {
-  agent: async ({ params, respond, context, client, requestOrigin }) => {
+  agent: async ({ params, respond, context, client }) => {
     const p = params;
     if (!validateAgentParams(p)) {
       respond(
@@ -426,7 +426,6 @@ export const agentHandlers: GatewayRequestHandlers = {
         lane: request.lane,
         extraSystemPrompt: request.extraSystemPrompt,
         inputProvenance,
-        requestOrigin,
       },
       defaultRuntime,
       context.deps,

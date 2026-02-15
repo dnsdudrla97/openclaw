@@ -8,22 +8,6 @@ const OPENROUTER_APP_HEADERS: Record<string, string> = {
   "HTTP-Referer": "https://openclaw.ai",
 };
 
-function resolveOpenRouterReferer(requestOrigin?: string): string {
-  const raw = requestOrigin?.trim();
-  if (!raw) {
-    return OPENROUTER_APP_HEADERS["HTTP-Referer"];
-  }
-  try {
-    const parsed = new URL(raw);
-    if (parsed.protocol === "http:" || parsed.protocol === "https:") {
-      return parsed.origin;
-    }
-  } catch {
-    // fall through to default header
-  }
-  return OPENROUTER_APP_HEADERS["HTTP-Referer"];
-}
-
 /**
  * Resolve provider-specific extra params from model config.
  * Used to pass through stream params like temperature/maxTokens.
@@ -120,18 +104,13 @@ function createStreamFnWithExtraParams(
  * Create a streamFn wrapper that adds OpenRouter app attribution headers.
  * These headers allow OpenClaw to appear on OpenRouter's leaderboard.
  */
-function createOpenRouterHeadersWrapper(
-  baseStreamFn: StreamFn | undefined,
-  requestOrigin?: string,
-): StreamFn {
+function createOpenRouterHeadersWrapper(baseStreamFn: StreamFn | undefined): StreamFn {
   const underlying = baseStreamFn ?? streamSimple;
-  const referer = resolveOpenRouterReferer(requestOrigin);
   return (model, context, options) =>
     underlying(model, context, {
       ...options,
       headers: {
         ...OPENROUTER_APP_HEADERS,
-        "HTTP-Referer": referer,
         ...options?.headers,
       },
     });
@@ -149,7 +128,6 @@ export function applyExtraParamsToAgent(
   provider: string,
   modelId: string,
   extraParamsOverride?: Record<string, unknown>,
-  requestOrigin?: string,
 ): void {
   const extraParams = resolveExtraParams({
     cfg,
@@ -172,6 +150,6 @@ export function applyExtraParamsToAgent(
 
   if (provider === "openrouter") {
     log.debug(`applying OpenRouter app attribution headers for ${provider}/${modelId}`);
-    agent.streamFn = createOpenRouterHeadersWrapper(agent.streamFn, requestOrigin);
+    agent.streamFn = createOpenRouterHeadersWrapper(agent.streamFn);
   }
 }

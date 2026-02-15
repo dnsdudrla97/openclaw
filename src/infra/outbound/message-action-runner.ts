@@ -49,6 +49,7 @@ import {
 import { executePollAction, executeSendAction } from "./outbound-send-service.js";
 import { ensureOutboundSessionEntry, resolveOutboundSessionRoute } from "./outbound-session.js";
 import { resolveChannelTarget, type ResolvedMessagingTarget } from "./target-resolver.js";
+import { extractToolPayload } from "./tool-payload.js";
 
 export type MessageActionRunnerGateway = {
   url?: string;
@@ -58,6 +59,33 @@ export type MessageActionRunnerGateway = {
   clientDisplayName?: string;
   mode: GatewayClientMode;
 };
+
+function resolveAndApplyOutboundThreadId(
+  params: Record<string, unknown>,
+  ctx: {
+    channel: ChannelId;
+    to: string;
+    toolContext?: ChannelThreadingToolContext;
+    allowSlackAutoThread: boolean;
+  },
+): string | undefined {
+  const threadId = readStringParam(params, "threadId");
+  const slackAutoThreadId =
+    ctx.allowSlackAutoThread && ctx.channel === "slack" && !threadId
+      ? resolveSlackAutoThreadId({ to: ctx.to, toolContext: ctx.toolContext })
+      : undefined;
+  const telegramAutoThreadId =
+    ctx.channel === "telegram" && !threadId
+      ? resolveTelegramAutoThreadId({ to: ctx.to, toolContext: ctx.toolContext })
+      : undefined;
+  const resolved = threadId ?? slackAutoThreadId ?? telegramAutoThreadId;
+  // Write auto-resolved threadId back into params so downstream dispatch
+  // (plugin `readStringParam(params, "threadId")`) picks it up.
+  if (resolved && !params.threadId) {
+    params.threadId = resolved;
+  }
+  return resolved ?? undefined;
+}
 
 export type RunMessageActionParams = {
   cfg: OpenClawConfig;
@@ -127,30 +155,6 @@ export function getToolResult(
   result: MessageActionRunResult,
 ): AgentToolResult<unknown> | undefined {
   return "toolResult" in result ? result.toolResult : undefined;
-}
-
-function extractToolPayload(result: AgentToolResult<unknown>): unknown {
-  if (result.details !== undefined) {
-    return result.details;
-  }
-  const textBlock = Array.isArray(result.content)
-    ? result.content.find(
-        (block) =>
-          block &&
-          typeof block === "object" &&
-          (block as { type?: unknown }).type === "text" &&
-          typeof (block as { text?: unknown }).text === "string",
-      )
-    : undefined;
-  const text = (textBlock as { text?: string } | undefined)?.text;
-  if (text) {
-    try {
-      return JSON.parse(text);
-    } catch {
-      return text;
-    }
-  }
-  return result.content ?? result;
 }
 
 function applyCrossContextMessageDecoration({
@@ -469,23 +473,12 @@ async function handleSendAction(ctx: ResolvedActionContext): Promise<MessageActi
   const silent = readBooleanParam(params, "silent");
 
   const replyToId = readStringParam(params, "replyTo");
-  const threadId = readStringParam(params, "threadId");
-  // Slack auto-threading can inject threadTs without explicit params; mirror to that session key.
-  const slackAutoThreadId =
-    channel === "slack" && !replyToId && !threadId
-      ? resolveSlackAutoThreadId({ to, toolContext: input.toolContext })
-      : undefined;
-  // Telegram forum topic auto-threading: inject threadId so media/buttons land in the correct topic.
-  const telegramAutoThreadId =
-    channel === "telegram" && !threadId
-      ? resolveTelegramAutoThreadId({ to, toolContext: input.toolContext })
-      : undefined;
-  const resolvedThreadId = threadId ?? slackAutoThreadId ?? telegramAutoThreadId;
-  // Write auto-resolved threadId back into params so downstream dispatch
-  // (plugin `readStringParam(params, "threadId")`) picks it up.
-  if (resolvedThreadId && !params.threadId) {
-    params.threadId = resolvedThreadId;
-  }
+  const resolvedThreadId = resolveAndApplyOutboundThreadId(params, {
+    channel,
+    to,
+    toolContext: input.toolContext,
+    allowSlackAutoThread: channel === "slack" && !replyToId,
+  });
   const outboundRoute =
     agentId && !dryRun
       ? await resolveOutboundSessionRoute({
@@ -584,19 +577,19 @@ async function handlePollAction(ctx: ResolvedActionContext): Promise<MessageActi
   });
   const maxSelections = allowMultiselect ? Math.max(2, options.length) : 1;
 
-  const threadId = readStringParam(params, "threadId");
-  const slackAutoThreadId =
-    channel === "slack" && !threadId
-      ? resolveSlackAutoThreadId({ to, toolContext: input.toolContext })
-      : undefined;
-  const telegramAutoThreadId =
-    channel === "telegram" && !threadId
-      ? resolveTelegramAutoThreadId({ to, toolContext: input.toolContext })
-      : undefined;
-  const resolvedThreadId = threadId ?? slackAutoThreadId ?? telegramAutoThreadId;
-  if (resolvedThreadId && !params.threadId) {
-    params.threadId = resolvedThreadId;
+  if (durationSeconds !== undefined && channel !== "telegram") {
+    throw new Error("pollDurationSeconds is only supported for Telegram polls");
   }
+  if (isAnonymous !== undefined && channel !== "telegram") {
+    throw new Error("pollAnonymous/pollPublic are only supported for Telegram polls");
+  }
+
+  const resolvedThreadId = resolveAndApplyOutboundThreadId(params, {
+    channel,
+    to,
+    toolContext: input.toolContext,
+    allowSlackAutoThread: channel === "slack",
+  });
 
   const base = typeof params.message === "string" ? params.message : "";
   await maybeApplyCrossContextMarker({

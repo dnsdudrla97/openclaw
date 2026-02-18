@@ -485,7 +485,8 @@ async function runPerplexitySearch(params: {
   });
 
   if (!res.ok) {
-    const detail = await readResponseText(res);
+    const detailResult = await readResponseText(res, { maxBytes: 64_000 });
+    const detail = detailResult.text;
     throw new Error(`Perplexity API error (${res.status}): ${detail || res.statusText}`);
   }
 
@@ -534,7 +535,8 @@ async function runGrokSearch(params: {
   });
 
   if (!res.ok) {
-    const detail = await readResponseText(res);
+    const detailResult = await readResponseText(res, { maxBytes: 64_000 });
+    const detail = detailResult.text;
     throw new Error(`xAI API error (${res.status}): ${detail || res.statusText}`);
   }
 
@@ -664,7 +666,8 @@ async function runWebSearch(params: {
   });
 
   if (!res.ok) {
-    const detail = await readResponseText(res);
+    const detailResult = await readResponseText(res, { maxBytes: 64_000 });
+    const detail = detailResult.text;
     throw new Error(`Brave Search API error (${res.status}): ${detail || res.statusText}`);
   }
 
